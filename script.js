@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Coordenadas são relativas ao viewBox (0-500 x 0-300)
                 networkGraph: {
                     nodes: [
-                        { id: 'wallet_user', label: 'SUA WALLET', type: 'wallet', cx: 250, cy: 150, r: 40 }, 
+                        { id: 'wallet_user', label: 'WALLET', type: 'wallet', cx: 250, cy: 150, r: 40 }, 
                         { id: 'mixer_tornadocash', label: 'TORNADOCASH', type: 'risk', cx: 100, cy: 80, r: 30 },
                         { id: 'suspicious_exchange', label: 'EXCHANGE SUSP.', type: 'risk', cx: 400, cy: 80, r: 30 },
                         { id: 'new_contract', label: 'CONTRATO NAO AUD.', type: 'risk', cx: 250, cy: 240, r: 30 }
@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 ],
                 networkGraph: {
                     nodes: [
-                        { id: 'wallet_user', label: 'SUA WALLET', type: 'wallet', cx: 250, cy: 150, r: 40 },
+                        { id: 'wallet_user', label: 'WALLET', type: 'wallet', cx: 250, cy: 150, r: 40 },
                         { id: 'trusted_exchange', label: 'EXCHANGE CONFIÁVEL', type: 'safe', cx: 100, cy: 80, r: 30 },
                         { id: 'known_merchant', label: 'COMERCIANTE CONHECIDO', type: 'safe', cx: 400, cy: 80, r: 30 }
                     ],
@@ -178,7 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
             alpineScoreRef = Alpine.$data(sections.scoreDecision); 
 
             animateScore(currentScenario.score); 
-            animateScoreTrend(currentScenario.scoreTrend); 
+            drawSimpleScoreTrend(currentScenario.scoreTrend);
             updateDecisionUI(currentScenario); 
             await wait(2500); // Give time for score and chart animation
 
@@ -313,6 +313,48 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             };
             requestAnimationFrame(animate);
+        }
+
+        function drawSimpleScoreTrend(data) {
+            const canvas = document.getElementById('scoreTrendSimpleChart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            // Ajusta o tamanho do canvas para o container
+            canvas.width = canvas.offsetWidth || 600;
+            canvas.height = canvas.offsetHeight || 180;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Margens internas
+            const margin = { left: 40, right: 20, top: 20, bottom: 30 };
+            const w = canvas.width - margin.left - margin.right;
+            const h = canvas.height - margin.top - margin.bottom;
+
+            // Eixos
+            ctx.strokeStyle = "#e5e7eb";
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 3; i++) {
+                const y = margin.top + (h / 3) * i;
+                ctx.beginPath();
+                ctx.moveTo(margin.left, y);
+                ctx.lineTo(margin.left + w, y);
+                ctx.stroke();
+            }
+
+            // Linha do score
+            ctx.save();
+            ctx.beginPath();
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = "#1877F2";
+            const n = data.length;
+            for (let i = 0; i < n; i++) {
+                const x = margin.left + (w * i) / (n - 1);
+                const y = margin.top + h - ((data[i].score - 50) / 50) * h; // Score 50~100
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+            ctx.restore();
         }
 
         function animateScoreTrend(data) {
@@ -497,90 +539,125 @@ document.addEventListener('DOMContentLoaded', () => {
             const svg = document.getElementById('graph-svg');
             if (!svg) return;
 
-            svg.innerHTML = ''; // Clear previous graph content
+            svg.innerHTML = '';
 
+            // Parâmetros visuais
+            const minBlockWidth = 120;
+            const blockHeight = 44;
+            const blockRadius = 10;
+            const fontSize = 15;
+            const fontFamily = 'Inter, Arial, sans-serif';
+            const arrowSize = 8;
+
+            // Medir texto para ajustar largura dos blocos
+            function measureText(text, font) {
+                const temp = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                temp.setAttribute('font-size', fontSize);
+                temp.setAttribute('font-family', fontFamily);
+                temp.setAttribute('font-weight', 'bold');
+                temp.textContent = text;
+                svg.appendChild(temp);
+                const width = temp.getBBox().width;
+                svg.removeChild(temp);
+                return width;
+            }
+
+            // Calcula largura de cada bloco
             const nodesMap = new Map();
+            graphData.nodes.forEach(node => {
+                const textWidth = measureText(node.label, fontFamily);
+                node.blockWidth = Math.max(minBlockWidth, textWidth + 36);
+                nodesMap.set(node.id, node);
+            });
 
-            // Create nodes (SVG circles and text)
-            for (const nodeData of graphData.nodes) {
-                // Node Circle
-                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-                circle.setAttribute('id', `svg-node-${nodeData.id}`);
-                circle.setAttribute('cx', nodeData.cx);
-                circle.setAttribute('cy', nodeData.cy);
-                circle.setAttribute('r', nodeData.r);
-                circle.setAttribute('class', `svg-node-circle ${nodeData.type}`);
-                // Garantir cor clara caso CSS não aplique
-                if (nodeData.type === 'wallet') {
-                    circle.setAttribute('fill', '#E7F3FF');
-                    circle.setAttribute('stroke', '#1877F2');
-                } else if (nodeData.type === 'risk') {
-                    circle.setAttribute('fill', 'rgba(229,57,53,0.15)');
-                    circle.setAttribute('stroke', '#E53935');
-                } else if (nodeData.type === 'safe') {
-                    circle.setAttribute('fill', 'rgba(49,162,76,0.1)');
-                    circle.setAttribute('stroke', '#31A24C');
-                } else {
-                    circle.setAttribute('fill', '#FFFFFF');
-                    circle.setAttribute('stroke', '#DADDE1');
-                }
-                svg.appendChild(circle);
-                
-                // Node Text
+            // Desenha blocos (retângulos ajustados)
+            graphData.nodes.forEach(nodeData => {
+                const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                rect.setAttribute('x', nodeData.cx - nodeData.blockWidth / 2);
+                rect.setAttribute('y', nodeData.cy - blockHeight / 2);
+                rect.setAttribute('width', nodeData.blockWidth);
+                rect.setAttribute('height', blockHeight);
+                rect.setAttribute('rx', blockRadius);
+                rect.setAttribute('fill', '#fff');
+                rect.setAttribute('stroke', nodeData.type === 'wallet' ? '#1877F2' : (nodeData.type === 'risk' ? '#E53935' : '#31A24C'));
+                rect.setAttribute('stroke-width', nodeData.type === 'wallet' ? '2.5' : '2');
+                rect.setAttribute('filter', 'drop-shadow(0 1px 2px #0001)');
+                svg.appendChild(rect);
+
+                // Texto centralizado
                 const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
                 text.setAttribute('x', nodeData.cx);
-                text.setAttribute('y', nodeData.cy);
-                text.setAttribute('class', `svg-node-text ${nodeData.type}`);
-                text.setAttribute('fill', '#050505');
-                text.setAttribute('font-size', '14');
-                text.setAttribute('font-family', 'Inter, Arial, sans-serif');
-                text.setAttribute('font-weight', '600');
+                text.setAttribute('y', nodeData.cy + 6);
+                text.setAttribute('font-size', fontSize);
+                text.setAttribute('font-family', fontFamily);
+                text.setAttribute('font-weight', 'bold');
                 text.setAttribute('text-anchor', 'middle');
-                text.setAttribute('dominant-baseline', 'middle');
+                text.setAttribute('fill', '#222');
+                text.setAttribute('pointer-events', 'none');
                 text.textContent = nodeData.label;
                 svg.appendChild(text);
 
-                nodesMap.set(nodeData.id, { circle: circle, text: text, x: nodeData.cx, y: nodeData.cy, r: nodeData.r });
-                
-                // Animate node appearance
-                await new Promise(resolve => setTimeout(resolve, 150)); // Stagger
-                circle.style.opacity = 1;
-                text.style.opacity = 1;
-            }
+                nodeData._rect = rect;
+                nodeData._text = text;
+            });
 
-            // Create edges (SVG lines)
-            for (const edgeData of graphData.edges) {
+            // Desenha conexões (linhas com seta)
+            graphData.edges.forEach(edgeData => {
                 const fromNode = nodesMap.get(edgeData.from);
                 const toNode = nodesMap.get(edgeData.to);
-
                 if (fromNode && toNode) {
-                    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-                    line.setAttribute('x1', fromNode.x);
-                    line.setAttribute('y1', fromNode.y);
-                    line.setAttribute('x2', toNode.x);
-                    line.setAttribute('y2', toNode.y);
-                    line.setAttribute('class', `svg-edge-line ${edgeData.type === 'risk' ? 'risk' : ''}`);
-                    // Garantir cor clara caso CSS não aplique
-                    if (edgeData.type === 'risk') {
-                        line.setAttribute('stroke', '#E53935');
-                    } else if (edgeData.type === 'safe') {
-                        line.setAttribute('stroke', '#31A24C');
+                    let x1 = fromNode.cx, y1 = fromNode.cy;
+                    let x2 = toNode.cx, y2 = toNode.cy;
+
+                    // Ajusta para sair do meio da borda do bloco (vertical/horizontal)
+                    if (Math.abs(x1 - x2) < 10) {
+                        // Vertical
+                        y1 += blockHeight / 2;
+                        y2 -= blockHeight / 2;
+                    } else if (y1 === y2) {
+                        // Horizontal
+                        if (x2 > x1) {
+                            x1 += fromNode.blockWidth / 2;
+                            x2 -= toNode.blockWidth / 2;
+                        } else {
+                            x1 -= fromNode.blockWidth / 2;
+                            x2 += toNode.blockWidth / 2;
+                        }
                     } else {
-                        line.setAttribute('stroke', '#DADDE1');
+                        // Diagonal: aproxima da borda
+                        if (y2 > y1) y1 += blockHeight / 2;
+                        else y1 -= blockHeight / 2;
+                        if (x2 > x1) x1 += fromNode.blockWidth / 4;
+                        else x1 -= fromNode.blockWidth / 4;
+                        if (y2 > y1) y2 -= blockHeight / 2;
+                        else y2 += blockHeight / 2;
+                        if (x2 > x1) x2 -= toNode.blockWidth / 4;
+                        else x2 += toNode.blockWidth / 4;
                     }
-                    line.setAttribute('stroke-width', edgeData.type === 'risk' ? '2.5' : '2');
-                    svg.insertBefore(line, svg.firstChild); // Insert lines before circles so they don't cover text
 
-                    // Animate line drawing
-                    const length = Math.sqrt(Math.pow(toNode.x - fromNode.x, 2) + Math.pow(toNode.y - fromNode.y, 2));
-                    line.style.strokeDasharray = length;
-                    line.style.strokeDashoffset = length;
-
-                    await new Promise(resolve => setTimeout(resolve, 200)); // Stagger
-                    line.style.opacity = 1; // Make line visible
-                    line.style.strokeDashoffset = 0; // Animate drawing
+                    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                    line.setAttribute('x1', x1);
+                    line.setAttribute('y1', y1);
+                    line.setAttribute('x2', x2);
+                    line.setAttribute('y2', y2);
+                    line.setAttribute('stroke', edgeData.type === 'risk' ? '#E53935' : '#31A24C');
+                    line.setAttribute('stroke-width', '2');
+                    line.setAttribute('marker-end', 'url(#arrowhead)');
+                    svg.insertBefore(line, svg.firstChild);
                 }
+            });
+
+            // Define o marcador de seta (arrowhead)
+            let defs = svg.querySelector('defs');
+            if (!defs) {
+                defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+                svg.appendChild(defs);
             }
+            defs.innerHTML = `
+                <marker id="arrowhead" markerWidth="${arrowSize}" markerHeight="${arrowSize}" refX="${arrowSize/2}" refY="${arrowSize/2}" orient="auto" markerUnits="strokeWidth">
+                    <polygon points="0,0 ${arrowSize},${arrowSize/2} 0,${arrowSize}" fill="#E53935"/>
+                </marker>
+            `;
         }
 
         startAnalysisButton.addEventListener('click', runSimulation);

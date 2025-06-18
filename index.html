@@ -89,9 +89,8 @@
         <section id="networkViz" class="fade-in-section card p-8 md:p-10 rounded-2xl shadow-xl bg-[var(--surface-color)]">
             <h3 class="font-title text-3xl highlight-text border-b border-[var(--border-color)] pb-4 mb-2">3. VISUALIZAÇÃO DE REDE DE RISCO</h3>
             <p class="text-sm text-[var(--muted-text-color)] italic mb-6">Explore as conexões e a propagação do risco através de uma visualização intuitiva de grafo.</p>
-            <div class="relative w-full h-80 bg-[var(--background-color)] rounded-lg border border-[var(--module-border-color)] overflow-hidden flex items-center justify-center">
-                <svg id="graph-svg" class="w-full h-full" viewBox="0 0 500 300" preserveAspectRatio="xMidYMid meet">
-                    </svg>
+            <div class="relative w-full h-80 bg-[var(--background-color)] rounded-lg border border-[var(--module-border-color)] overflow-hidden flex items-center justify-center p-0">
+                <svg id="graph-svg" class="w-full h-full" viewBox="0 0 500 300" preserveAspectRatio="xMidYMid meet"></svg>
             </div>
         </section>
 
@@ -147,26 +146,7 @@
                 <div class="text-center">
                     <h4 class="font-semibold text-lg text-gray-300 mb-4">Tendência Histórica do Score (Últimas 24h)</h4>
                     <div class="relative w-full h-48 bg-[var(--background-color)] rounded-lg border border-[var(--module-border-color)] p-4 flex items-center justify-center">
-                        <svg class="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-                            <line x1="0" y1="20" x2="100" y2="20" class="chart-grid-line"></line>
-                            <line x1="0" y1="50" x2="100" y2="50" class="chart-grid-line"></line>
-                            <line x1="0" y1="80" x2="100" y2="80" class="chart-grid-line"></line>
-                            <path x-ref="scorePath" 
-                                :d="scoreTrendData.length > 0 ? 'M' + scoreTrendData.map((d, i) => `${(i / (scoreTrendData.length - 1)) * 100},${100 - d.score}`).join('L') : ''"
-                                class="chart-line" 
-                                :style="animateLine ? 'stroke-dashoffset: 0;' : 'stroke-dashoffset: ' + ($refs.scorePath ? $refs.scorePath.getTotalLength() : 0)"
-                            ></path>
-                            <template x-for="(point, index) in scoreTrendData">
-                                <circle 
-                                    :cx="(index / (scoreTrendData.length - 1)) * 100" 
-                                    :cy="100 - point.score" 
-                                    :class="{'chart-marker': true, 'bg-red-500': point.anomaly, 'bg-amber-400': point.anomaly && point.anomalyType === 'peak'}"
-                                    :style="point.anomaly ? 'opacity: 1;' : 'opacity: 0;'"
-                                >
-                                    <title x-text="point.anomaly ? 'Anomalia: ' + point.anomalyType : ''"></title>
-                                </circle>
-                            </template>
-                        </svg>
+                        <canvas id="scoreTrendSimpleChart" class="w-full h-full"></canvas>
                         <div class="absolute top-1 right-2 text-xs text-gray-500">Score</div>
                         <div class="absolute bottom-1 left-2 text-xs text-gray-500">Tempo</div>
                     </div>
