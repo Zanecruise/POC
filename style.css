@@ -1,0 +1,217 @@
+:root {
+    --primary-color: #1877F2; /* Azul Facebook */
+    --primary-color-darker: #145DBF;
+    --primary-color-light: #E7F3FF;
+    --background-color: #F0F2F5;
+    --surface-color: #FFFFFF;
+    --card-gradient-start: #FFFFFF;
+    --card-gradient-end: #F5F7FA;
+    --text-color: #050505;
+    --muted-text-color: #606770;
+    --border-color: rgba(24, 119, 242, 0.2);
+    --module-border-color: #DADDE1;
+
+    --success-color: #31A24C;
+    --success-bg: rgba(49, 162, 76, 0.1);
+    --warning-color: #F7B928;
+    --warning-bg: rgba(247, 185, 40, 0.15);
+    --danger-color: #E53935;
+    --danger-bg: rgba(229, 57, 53, 0.15);
+}
+
+body {
+    background-color: var(--background-color);
+    color: var(--text-color);
+    font-family: 'Inter', sans-serif;
+    scroll-behavior: smooth;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.font-title {
+    font-family: 'Roboto Slab', serif;
+    letter-spacing: 0.02em;
+}
+
+.highlight-text { color: var(--primary-color); }
+
+.cta-button {
+    background-color: var(--primary-color);
+    color: white;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 1.125rem;
+    letter-spacing: 0.05em;
+    border-radius: 0.5rem;
+    border: none;
+    padding: 0.75rem 2rem;
+    transition: all 0.2s ease-in-out;
+}
+
+.cta-button:hover:not(:disabled) {
+    background-color: var(--primary-color-darker);
+    transform: scale(1.02);
+}
+
+.cta-button:disabled {
+    background-color: #B0BEC5;
+    color: #ECEFF1;
+    opacity: 0.6;
+    cursor: wait;
+}
+
+.fade-in-section {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+
+.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.card {
+    border: 1px solid var(--module-border-color);
+    background: linear-gradient(135deg, var(--card-gradient-start), var(--card-gradient-end));
+    border-radius: 12px;
+    padding: 2rem;
+    transition: box-shadow 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.input-field {
+    background-color: white;
+    border: 1px solid var(--module-border-color);
+    color: var(--text-color);
+    padding: 0.75rem;
+    border-radius: 0.375rem;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.input-field:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(24, 119, 242, 0.2);
+}
+
+@keyframes fadeSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(40px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+.animate-slide-in {
+    animation: fadeSlideUp 0.6s ease-out forwards;
+}
+
+.tooltip-text {
+    visibility: hidden;
+    background-color: var(--surface-color);
+    color: var(--text-color);
+    padding: 8px;
+    border-radius: 4px;
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    border: 1px solid var(--module-border-color);
+}
+
+.evidence-tooltip:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* SVG Network Graph Nodes */
+.svg-node-circle.wallet {
+    fill: var(--primary-color-light);
+    stroke: var(--primary-color);
+    stroke-width: 3;
+}
+.svg-node-circle.risk {
+    fill: var(--danger-bg);
+    stroke: var(--danger-color);
+    stroke-width: 2;
+}
+.svg-node-circle.safe {
+    fill: var(--success-bg);
+    stroke: var(--success-color);
+    stroke-width: 2;
+}
+.svg-node-text {
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+    fill: var(--text-color);
+    font-weight: 600;
+    text-anchor: middle;
+    dominant-baseline: middle;
+    pointer-events: none;
+}
+
+/* SVG Edges */
+.svg-edge-line {
+    stroke: var(--border-color);
+    stroke-width: 2;
+    opacity: 0.7;
+}
+.svg-edge-line.risk {
+    stroke: var(--danger-color);
+    stroke-width: 2.5;
+    opacity: 0.8;
+}
+
+/* Score Chart Lines and Markers */
+.chart-grid-line {
+    stroke: var(--module-border-color);
+    stroke-width: 1;
+    opacity: 0.5;
+}
+.chart-line {
+    stroke: var(--primary-color);
+    stroke-width: 2.5;
+    fill: none;
+    transition: stroke-dashoffset 1s cubic-bezier(0.4,0,0.2,1);
+}
+.chart-marker {
+    stroke: var(--primary-color);
+    stroke-width: 1.5;
+    fill: var(--primary-color-light);
+    r: 2.5;
+    opacity: 1;
+}
+
+/* Ajuste para texto do gráfico */
+.text-gray-300, .text-gray-400, .text-gray-500 {
+    color: var(--muted-text-color) !important;
+}
+.text-white {
+    color: var(--text-color) !important;
+    font-weight: bold;
+}
+
+/* Corrige fundo do badge de veredito */
+.bg-warning-bg {
+    background-color: var(--warning-bg) !important;
+}
+.bg-success-bg {
+    background-color: var(--success-bg) !important;
+}
+.bg-danger-bg {
+    background-color: var(--danger-bg) !important;
+}
+
+/* Remove qualquer fundo escuro residual */
+.bg-black\/20, .bg-gray-900, .bg-gray-700 {
+    background-color: var(--surface-color) !important;
+}
